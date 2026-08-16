@@ -352,6 +352,21 @@ export const dbService = {
       };
     }
 
+    if (awardedCredits > 0) {
+      const newBalance = (profile.eco_credits || 0) + awardedCredits;
+
+      if (isSupabaseConfigured && supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('profiles').update({ eco_credits: newBalance }).eq('id', user.id);
+        }
+      }
+
+      if (!isSupabaseConfigured || !supabase) {
+        await this.updateProfile({ eco_credits: newBalance });
+      }
+    }
+
     if (isSupabaseConfigured && supabase) {
       await supabase.from('waste_disposals').insert({
         student_id: profile.id,
@@ -379,9 +394,6 @@ export const dbService = {
       if (newTransaction) {
         const txs = await this.getTransactions();
         localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify([newTransaction, ...txs]));
-
-        const newBalance = (profile.eco_credits || 0) + awardedCredits;
-        await this.updateProfile({ eco_credits: newBalance });
       }
     }
 
